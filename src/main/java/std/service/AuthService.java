@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import std.dto.AuthRequest;
 import std.dto.AuthResponse;
+import std.dto.TokenPayload;
 import std.repository.TokenRepository;
 import std.util.JwtUtil;
 
@@ -24,13 +25,17 @@ public class AuthService {
     }
 
     public AuthResponse refreshTokens(String refreshToken) {
-        Long userId = jwtUtil.readUserId(refreshToken);
+        var userId = jwtUtil.readUserId(refreshToken);
 
-        if (tokenRepository.isTokenExist(userId, refreshToken)) {
+        if (jwtUtil.isTokenExpired(refreshToken)) {
+            forbid("Refresh token is expired");
+        } else if (tokenRepository.isTokenExist(userId, refreshToken)) {
             return generateTokens(userId, jwtUtil.readUsername(refreshToken));
         } else {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            forbid("Can't find refresh token for current user");
         }
+
+        return null;
     }
 
     private AuthResponse generateTokens(Long userId, String username) {
@@ -38,5 +43,20 @@ public class AuthService {
         tokenRepository.saveRefresh(userId, response.getRefresh());
 
         return response;
+    }
+
+    public TokenPayload readToken(String token) {
+        if (jwtUtil.isTokenExpired(token)) {
+            forbid("Token is expired");
+        }
+
+        return new TokenPayload(
+                jwtUtil.readUserId(token),
+                jwtUtil.readUsername(token)
+        );
+    }
+
+    private void forbid(String message) throws ResponseStatusException {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, message);
     }
 }

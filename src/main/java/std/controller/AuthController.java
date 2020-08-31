@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import std.dto.AuthRequest;
 import std.dto.AuthResponse;
+import std.dto.TokenPayload;
 import std.service.AuthService;
 
 @RestController
@@ -23,7 +24,12 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refreshTokens(String refreshToken) {
+    public ResponseEntity<AuthResponse> refreshTokens(@RequestBody String refreshToken) {
         return ResponseEntity.ok(authService.refreshTokens(refreshToken));
+    }
+
+    @PostMapping("/read")
+    public ResponseEntity<TokenPayload> validateToken(@RequestBody String accessToken) {
+        return ResponseEntity.ok(authService.readToken(accessToken));
     }
 }

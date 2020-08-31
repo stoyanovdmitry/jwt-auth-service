@@ -6,7 +6,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import std.dto.AuthResponse;
 
 import javax.crypto.SecretKey;
@@ -36,7 +39,7 @@ public class JwtUtil {
     public boolean isTokenExpired(String token) {
         Date expiration = parseBody(token).get(Claims.EXPIRATION, Date.class);
 
-        return new Date().before(expiration);
+        return new Date().after(expiration);
     }
 
     public Long readUserId(String token) {
@@ -50,11 +53,15 @@ public class JwtUtil {
     }
 
     private Claims parseBody(String token) {
-        return Jwts.parserBuilder()
-                   .setSigningKey(SECRET_KEY)
-                   .build()
-                   .parseClaimsJws(token)
-                   .getBody();
+        try {
+            return Jwts.parserBuilder()
+                       .setSigningKey(SECRET_KEY)
+                       .build()
+                       .parseClaimsJws(token)
+                       .getBody();
+        } catch (SignatureException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        }
     }
 
     private String getToken(Long userId, String username, Long expirationMinutes) {
