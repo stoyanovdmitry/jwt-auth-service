@@ -2,7 +2,7 @@ package std.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
 import std.dto.AuthRequest;
 import std.dto.AuthResponse;
 import std.repository.TokenRepository;
@@ -29,7 +29,7 @@ public class AuthService {
         if (tokenRepository.isTokenExist(userId, refreshToken)) {
             return generateTokens(userId, jwtUtil.readUsername(refreshToken));
         } else {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
     }
 

@@ -23,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> generateTokens(String refreshToken) {
+    public ResponseEntity<AuthResponse> refreshTokens(String refreshToken) {
         return ResponseEntity.ok(authService.refreshTokens(refreshToken));
     }
 }
