@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -25,10 +26,11 @@ public class JwtUtil {
     private static final Long REFRESH_EXPIRATION = 240L;
     private static final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private static final String USERNAME = "username";
+    public static final String ROLES = "roles";
 
-    public AuthResponse generateTokens(Long userId, String username) {
-        var access = getToken(userId, username, ACCESS_EXPIRATION);
-        var refresh = getToken(userId, username, REFRESH_EXPIRATION);
+    public AuthResponse generateTokens(Long userId, String username, List<String> roles) {
+        var access = getToken(userId, username, roles, ACCESS_EXPIRATION);
+        var refresh = getToken(userId, username, roles, REFRESH_EXPIRATION);
 
         return AuthResponse.of(access, refresh);
     }
@@ -43,6 +45,10 @@ public class JwtUtil {
         return parseBody(token).get(USERNAME, String.class);
     }
 
+    public List<String> readRoles(String token) {
+        return parseBody(token).get(ROLES, List.class);
+    }
+
     private Claims parseBody(String token) {
         try {
             return Jwts.parserBuilder()
@@ -55,9 +61,10 @@ public class JwtUtil {
         }
     }
 
-    private String getToken(Long userId, String username, Long expirationMinutes) {
+    private String getToken(Long userId, String username, List<String> roles, Long expirationMinutes) {
         return JWT_BUILDER.setSubject(userId.toString())
                           .addClaims(Collections.singletonMap(USERNAME, username))
+                          .addClaims(Collections.singletonMap(ROLES, roles))
                           .setExpiration(defineExpirationTime(expirationMinutes))
                           .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                           .compact();

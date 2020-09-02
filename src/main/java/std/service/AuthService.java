@@ -9,6 +9,8 @@ import std.dto.TokenPayload;
 import std.repository.TokenRepository;
 import std.util.JwtUtil;
 
+import java.util.List;
+
 @Service
 public class AuthService {
 
@@ -21,23 +23,29 @@ public class AuthService {
     }
 
     public AuthResponse generateTokens(AuthRequest request) {
-        return generateTokens(request.getUserId(), request.getUsername());
+        return generateTokens(
+                request.getUserId(),
+                request.getUsername(),
+                request.getRoles()
+        );
     }
 
     public AuthResponse refreshTokens(String refreshToken) {
         var userId = jwtUtil.readUserId(refreshToken);
 
         if (tokenRepository.isTokenExist(userId, refreshToken)) {
-            return generateTokens(userId, jwtUtil.readUsername(refreshToken));
+            return generateTokens(
+                    userId,
+                    jwtUtil.readUsername(refreshToken),
+                    jwtUtil.readRoles(refreshToken)
+            );
         } else {
-            forbid("Can't find refresh token for current user");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Can't find refresh token for current user");
         }
-
-        return null;
     }
 
-    private AuthResponse generateTokens(Long userId, String username) {
-        var response = jwtUtil.generateTokens(userId, username);
+    private AuthResponse generateTokens(Long userId, String username, List<String> roles) {
+        var response = jwtUtil.generateTokens(userId, username, roles);
         tokenRepository.saveRefresh(userId, response.getRefresh());
 
         return response;
@@ -46,11 +54,9 @@ public class AuthService {
     public TokenPayload readToken(String token) {
         return new TokenPayload(
                 jwtUtil.readUserId(token),
-                jwtUtil.readUsername(token)
+                jwtUtil.readUsername(token),
+                jwtUtil.readRoles(token)
         );
     }
 
-    private void forbid(String message) throws ResponseStatusException {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, message);
-    }
 }
