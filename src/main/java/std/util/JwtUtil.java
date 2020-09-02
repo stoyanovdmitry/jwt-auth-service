@@ -1,9 +1,6 @@
 package std.util;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
@@ -36,12 +33,6 @@ public class JwtUtil {
         return AuthResponse.of(access, refresh);
     }
 
-    public boolean isTokenExpired(String token) {
-        Date expiration = parseBody(token).get(Claims.EXPIRATION, Date.class);
-
-        return new Date().after(expiration);
-    }
-
     public Long readUserId(String token) {
         String subject = parseBody(token).get(Claims.SUBJECT, String.class);
 
@@ -59,8 +50,8 @@ public class JwtUtil {
                        .build()
                        .parseClaimsJws(token)
                        .getBody();
-        } catch (SignatureException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+        } catch (SignatureException | ExpiredJwtException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
         }
     }
 

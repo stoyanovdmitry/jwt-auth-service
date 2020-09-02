@@ -27,9 +27,7 @@ public class AuthService {
     public AuthResponse refreshTokens(String refreshToken) {
         var userId = jwtUtil.readUserId(refreshToken);
 
-        if (jwtUtil.isTokenExpired(refreshToken)) {
-            forbid("Refresh token is expired");
-        } else if (tokenRepository.isTokenExist(userId, refreshToken)) {
+        if (tokenRepository.isTokenExist(userId, refreshToken)) {
             return generateTokens(userId, jwtUtil.readUsername(refreshToken));
         } else {
             forbid("Can't find refresh token for current user");
@@ -46,10 +44,6 @@ public class AuthService {
     }
 
     public TokenPayload readToken(String token) {
-        if (jwtUtil.isTokenExpired(token)) {
-            forbid("Token is expired");
-        }
-
         return new TokenPayload(
                 jwtUtil.readUserId(token),
                 jwtUtil.readUsername(token)
